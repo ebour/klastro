@@ -1,12 +1,16 @@
 import base64
 
 import configparser
+from datetime import datetime
 import re
 import time
+import uuid
 from os.path import isfile
 
 from bs4 import BeautifulSoup
 import requests, os
+
+from git.repo import Repo
 
 
 class AstroAssistant:
@@ -31,7 +35,6 @@ class AstroAssistant:
         days_data = []
         for day in range(0, 8):
             days_data += self.soup.find_all("div", id="day_%i" % day)
-
 
         for day_idx, day_data in enumerate(days_data):
             day = day_data.find_next('div', class_="fc_day_date").find_all('span')[0].get_text()
@@ -63,6 +66,38 @@ class AstroAssistant:
 
         return forecast
 
+    def update_forecast_feed(self):
+        forecast = self.get_forecast()
+
+        msg = 'No good seeing forecasted in the next 7 days.'
+        if forecast.__len__() > 0:
+            msg = "Good conditions forecasted on "
+            msg += ", ".join(forecast)
+
+            link = self.get_url()
+
+            _id = uuid.uuid4()
+
+            timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
+            entry = []
+            entry.append(f"<entry>\n")
+            entry.append(f"<title>{timestamp} astronomical forcast</title>\n")
+            entry.append(f"<link href=\"{link}\"/>\n")
+            entry.append(f"<id>urn:uuid:{_id}</id>\n")
+            entry.append(f"<updated>{timestamp}</updated>\n")
+            entry.append(f"<summary>{msg}</summary>\n")
+            entry.append(f"</entry>\n")
+            entry.append(f"<updated>{timestamp}</updated>\n")
+            entry.append("</feed>\n")
+            with open('./klastro.atom', 'r+') as f:
+                data = f.readlines()
+                data.pop()
+                data.pop()
+                data.extend(entry)
+            with open('./klastro.atom', 'r+') as f:
+                f.writelines(data)
+
 
 def entry_point(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -78,15 +113,15 @@ def entry_point(event, context):
     lng = "6.16"
 
     co = AstroAssistant(lat, lng)
-    forecast = co.get_forecast()
+    co.update_forecast_feed()
 
-    msg = 'No good seeing forecasted in the next 7 days.'
-    if forecast.__len__() > 0:
-        msg = 'There is a chance to have good seeing on %s.\nMore details are available at: %s.\n' % (
-        ", ".join(forecast), co.get_url())
-        print(msg)
+    repo = Repo('.')
 
+    repo.index.add(['klastro.atom'])
+    repo.index.commit('update astronomical forecast')
 
+    origin = repo.remotes[0]
+    origin.push()
 
 if __name__ == "__main__":
     entry_point({}, None)
