@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+<title>Klastro feed</title>
+<link href=""/>
+<author>
+<name>John Doe</name>
+</author>
+<id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>
+
+<entry>
+<title>2024-03-07T22:25:32 astronomical forcast</title>
+<link href="http://clearoutside.com/forecast/45.98/6.16"/>
+<id>urn:uuid:e9ab3316-13fa-4254-9c59-dc0057134580</id>
+<updated>2024-03-07T22:25:32</updated>
+<summary>Good conditions forecasted on Thursday 7 at 23 hour, Friday 8 at 23 hour</summary>
+</entry>
+<updated>2024-03-07T22:25:32</updated>
+</feed>
