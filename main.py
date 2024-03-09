@@ -1,16 +1,12 @@
 import base64
 
-import configparser
 from datetime import datetime
 import re
-import time
+
 import uuid
-from os.path import isfile
 
 from bs4 import BeautifulSoup
-import requests, os
-
-from git.repo import Repo
+import requests
 
 
 class AstroAssistant:
@@ -49,8 +45,8 @@ class AstroAssistant:
 
             hourly = {}
             idx = 23
-            min_hour = min(int(begin.split(':')[0]), int(end.split(':')[0])-1)
-            max_hour = max(int(begin.split(':')[0]), int(end.split(':')[0])-1)
+            min_hour = min(int(begin.split(':')[0]), int(end.split(':')[0]) - 1)
+            max_hour = max(int(begin.split(':')[0]), int(end.split(':')[0]) - 1)
             for li in elements:
                 expected_condition = li['class'][0].split('_')[1]
                 if expected_condition in ['ok', 'good'] and idx in range(min_hour, max_hour):
@@ -69,34 +65,37 @@ class AstroAssistant:
     def update_forecast_feed(self):
         forecast = self.get_forecast()
 
-        msg = 'No good seeing forecasted in the next 7 days.'
+        link = self.get_url()
+        _id = uuid.uuid4()
+        timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        msg = None
+
         if forecast.__len__() > 0:
             msg = "Good conditions forecasted on "
             msg += ", ".join(forecast)
+        else:
+            msg = 'No good seeing forecasted in the next 7 days.'
 
-            link = self.get_url()
+        entry = []
 
-            _id = uuid.uuid4()
+        entry.append(f"<entry>\n")
+        entry.append(f"<title>{timestamp} astronomical forcast</title>\n")
+        entry.append(f"<link href=\"{link}\"/>\n")
+        entry.append(f"<id>urn:uuid:{_id}</id>\n")
+        entry.append(f"<updated>{timestamp}</updated>\n")
+        entry.append(f"<summary>{msg}</summary>\n")
+        entry.append(f"</entry>\n")
+        entry.append(f"<updated>{timestamp}</updated>\n")
+        entry.append("</feed>\n")
 
-            timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        with open('./klastro.atom', 'r+') as f:
+            data = f.readlines()
+            data.pop()
+            data.pop()
+            data.extend(entry)
 
-            entry = []
-            entry.append(f"<entry>\n")
-            entry.append(f"<title>{timestamp} astronomical forcast</title>\n")
-            entry.append(f"<link href=\"{link}\"/>\n")
-            entry.append(f"<id>urn:uuid:{_id}</id>\n")
-            entry.append(f"<updated>{timestamp}</updated>\n")
-            entry.append(f"<summary>{msg}</summary>\n")
-            entry.append(f"</entry>\n")
-            entry.append(f"<updated>{timestamp}</updated>\n")
-            entry.append("</feed>\n")
-            with open('./klastro.atom', 'r+') as f:
-                data = f.readlines()
-                data.pop()
-                data.pop()
-                data.extend(entry)
-            with open('./klastro.atom', 'r+') as f:
-                f.writelines(data)
+        with open('./klastro.atom', 'r+') as f:
+            f.writelines(data)
 
 
 def entry_point(event, context):
@@ -115,13 +114,6 @@ def entry_point(event, context):
     co = AstroAssistant(lat, lng)
     co.update_forecast_feed()
 
-    repo = Repo('.')
-
-    repo.index.add(['klastro.atom'])
-    repo.index.commit('update astronomical forecast')
-
-    origin = repo.remotes[0]
-    origin.push()
 
 if __name__ == "__main__":
     entry_point({}, None)
