@@ -34,7 +34,7 @@ def entry_point(event, context):
         if not os.path.exists('klastro'):
             raise Exception('Unable to git clone pull klastro repository.')
 
-        p = subprocess.Popen("./klastro/update_feed.sh",
+        p = subprocess.Popen("cd klastro && ./update_feed.sh",
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
