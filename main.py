@@ -79,7 +79,7 @@ class AstroAssistant:
         entry = []
 
         entry.append(f"<entry>\n")
-        entry.append(f"<title>{timestamp} astronomical forcast</title>\n")
+        entry.append(f"<title>{timestamp} astronomical forecast</title>\n")
         entry.append(f"<link href=\"{link}\"/>\n")
         entry.append(f"<id>urn:uuid:{_id}</id>\n")
         entry.append(f"<updated>{timestamp}</updated>\n")
